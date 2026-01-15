@@ -1,0 +1,81 @@
+name: Auto Blog Pipeline
+
+# 1. トリガー設定
+on:
+  # スケジュール実行: UTC 0:00 (日本時間 9:00)
+  schedule:
+    - cron: '0 0 * * *'
+  # 手動実行ボタン
+  workflow_dispatch:
+
+# 2. 権限設定 (重要)
+# リポジトリへのPush(DB保存)とGitHub Pagesへのデプロイに必要
+permissions:
+  contents: write
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      # --- 基本セットアップ ---
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip' # pipのキャッシュを有効化して高速化
+
+      # --- 依存関係のインストール ---
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          # requirements.txt がある場合はそれを使用、なければ直接指定
+          if [ -f requirements.txt ]; then
+            pip install -r requirements.txt
+          else
+            pip install playwright pandas google-generativeai mkdocs-material python-dotenv jinja2
+          fi
+          
+      # Playwrightのブラウザバイナリ(Chromium)をインストール
+      - name: Install Playwright browsers
+        run: playwright install chromium
+
+      # --- パイプライン実行 ---
+      
+      # 1. スクレイピング (DBへ保存)
+      - name: Run Scraper (Pipeline)
+        run: python seo_pipeline.py
+
+      # 2. AI記事生成 (Gemini API使用)
+      # 4秒待機のロジックが入っているため、API制限内で動作します
+      - name: Run Content Generator
+        env:
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+        run: python content_generator.py
+
+      # 3. サイト用Markdown書き出し
+      - name: Export to MkDocs structure
+        run: python export_to_site.py
+
+      # --- データの永続化 (重要) ---
+      # 更新されたSQLite DBと生成されたMarkdownをリポジトリに保存します。
+      # これを行わないと、次回の実行時にデータがリセットされてしまいます。
+      - name: Commit and Push changes (DB & Docs)
+        run: |
+          git config user.name "GitHub Action Bot"
+          git config user.email "action@github.com"
+          
+          # DBファイルとdocsフォルダをステージング
+          git add seo_content.db my_site/docs/
+          
+          # 変更がある場合のみコミットしてプッシュ
+          # (エラー回避のため、差分がない場合は何もしないロジック)
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Auto-update: Content & Database [skip ci]" && git push)
+
+      # --- デプロイ ---
+      # MkDocsをビルドして gh-pages ブランチへデプロイ
+      - name: Deploy to GitHub Pages
+        run: mkdocs gh-deploy --force

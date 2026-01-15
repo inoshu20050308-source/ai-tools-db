@@ -1,0 +1,6 @@
+playwright
+pandas
+google-generativeai
+mkdocs-material
+python-dotenv
+jinja2
