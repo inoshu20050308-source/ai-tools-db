@@ -9,6 +9,7 @@ from dotenv import load_dotenv
 import google.generativeai as genai
 from google.api_core import exceptions as google_exceptions
 from jinja2 import Template
+from affiliate_manager import get_affiliate_html  # 広告管理モジュール
 
 # ==========================================
 # 0. Setup & Configuration
@@ -37,7 +38,6 @@ class GeneratorConfig:
     # 60秒 / 15回 = 4秒/回。安全マージンを含めて4.0秒待機する。
     request_interval_seconds: float = 4.0
 
-# Jinja2 プロンプトテンプレート
 # Jinja2 プロンプトテンプレート (Ver 2.0: Material for MkDocs Optimized)
 PROMPT_TEMPLATE = """
 あなたは「辛口だが信頼できるプロのテックレビュアー」です。
@@ -237,10 +237,20 @@ def main():
     for i, product in enumerate(pending_products, 1):
         logger.info(f"--- Processing {i}/{len(pending_products)}: {product.get('url')} ---")
         
+        # 記事生成 (同期処理)
         generated_text = generator.generate_article(product)
         
         if generated_text:
-            db.update_article(product['url'], generated_text)
+            # --- 収益化ロジックの注入 ---
+            # 製品タイトルに基づいて最適な広告HTMLを取得
+            ad_html = get_affiliate_html(product['title'])
+            
+            # 記事本文の末尾に広告を結合
+            final_content = generated_text + "\n\n" + ad_html
+            # --------------------------
+
+            # DB保存
+            db.update_article(product['url'], final_content)
         else:
             logger.warning("Skipped DB update due to generation failure.")
 
