@@ -62,19 +62,29 @@ jobs:
 
       # --- データの永続化 (重要) ---
       # 更新されたSQLite DBと生成されたMarkdownをリポジトリに保存します。
-      # これを行わないと、次回の実行時にデータがリセットされてしまいます。
       - name: Commit and Push changes (DB & Docs)
         run: |
           git config user.name "GitHub Action Bot"
           git config user.email "action@github.com"
           
-          # DBファイルとdocsフォルダをステージング
+          # DBとdocsフォルダをステージング
           git add seo_content.db my_site/docs/
           
-          # 変更がある場合のみコミットしてプッシュ
-          # (エラー回避のため、差分がない場合は何もしないロジック)
-          git diff --quiet && git diff --staged --quiet || (git commit -m "Auto-update: Content & Database [skip ci]" && git push)
+          # 変更がある場合のみ実行するロジック
+          if ! git diff --quiet || ! git diff --staged --quiet; then
+            echo "Changes detected. Committing..."
+            git commit -m "Auto-update: Content & Database [skip ci]"
+            
+            # 【重要】リモート(GitHub側)の最新状態を取り込んでからPushする
+            # これにより「rejected」エラーを防ぎます
+            git pull --rebase origin main
+            
+            git push origin main
+          else
+            echo "No changes to commit."
+          fi
 
-     - name: Deploy to GitHub Pages
-        # my_site フォルダの設定ファイルを使うように指定
+      # --- デプロイ ---
+      # サイトをビルドして公開します
+      - name: Deploy to GitHub Pages
         run: mkdocs gh-deploy --config-file my_site/mkdocs.yml --force
