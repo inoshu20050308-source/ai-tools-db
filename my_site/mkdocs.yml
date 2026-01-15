@@ -1,0 +1,119 @@
+# ==========================================
+# 基本情報 (Basic Information)
+# ==========================================
+site_name: AI Tool Database
+site_description: エンジニア向けの最新AIツール・ガジェットスペック比較データベース
+site_url: https://example.com/  # 実際の公開URLに書き換えてください
+site_author: Your Name
+
+# ==========================================
+# テーマ設定 (Theme Configuration)
+# ==========================================
+theme:
+  name: material
+  language: ja # 日本語化
+
+  # サイトアイコンとロゴ (必要に応じて画像パスを指定)
+  # logo: assets/logo.png
+  # favicon: assets/favicon.ico
+
+  # カラーパレット設定 (ライトモード/ダークモード切り替え対応)
+  palette:
+    # ライトモード設定
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo # テック系らしい信頼感のある色
+      accent: blue
+      toggle:
+        icon: material/weather-sunny
+        name: ダークモードへ切り替え
+
+    # ダークモード設定
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: blue
+      toggle:
+        icon: material/weather-night
+        name: ライトモードへ切り替え
+
+  # フォント設定
+  # 日本語を美しく表示するため Noto Sans JP を指定
+  font:
+    text: Roboto        # 英数字用 (Google Fonts)
+    code: Roboto Mono   # コードブロック用
+
+  # 機能設定 (Features)
+  features:
+    - navigation.instant      # SPAのようにページ遷移を高速化
+    - navigation.tracking     # スクロールに応じてURLを自動更新
+    - navigation.top          # 画面右下に「トップに戻る」ボタンを表示
+    - navigation.tabs         # PC表示時にトップナビゲーションをタブ化（見やすい）
+    - navigation.sections     # サイドバーのセクションをグループ化
+    - navigation.expand       # サイドバーをデフォルトで展開
+    - search.suggest          # 検索補完機能
+    - search.highlight        # 検索結果のハイライト
+    - content.code.copy       # コードブロックにコピーボタンを追加
+
+# ==========================================
+# Markdown拡張 (Markdown Extensions)
+# ==========================================
+markdown_extensions:
+  # 標準機能の拡張
+  - toc:
+      permalink: true     # 見出しにリンク(#)を付与
+      toc_depth: 3        # 目次に表示する深さ
+
+  - tables                # テーブル（スペック表などに必須）
+  - attr_list             # HTML属性の付与 (画像サイズ調整などに便利)
+  - def_list              # 定義リスト
+
+  # Admonition (注釈ボックス)
+  - admonition
+  
+  # PyMdown Extensions (Materialテーマ推奨の拡張パック)
+  - pymdownx.details      # ??? で折りたたみ表示を作成
+  - pymdownx.superfences  # コードブロックのネストなどを可能にする
+  - pymdownx.tabbed:      # コンテンツ内のタブ切り替え
+      alternate_style: true
+  
+  # コードハイライト
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+
+  # アイコン・絵文字
+  - pymdownx.emoji:
+      emoji_index: !!python/name:materialx.emoji.twemoji
+      emoji_generator: !!python/name:materialx.emoji.to_svg
+
+# ==========================================
+# 追加設定 (Extra Configuration)
+# ==========================================
+extra:
+  # Google Analytics設定
+  analytics:
+    provider: google
+    property: G-XXXXXXXXXX # IDを設定してください
+
+  # ソーシャルリンク (フッターに表示)
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/yourusername
+    - icon: fontawesome/brands/twitter
+      link: https://twitter.com/yourusername
+
+# ==========================================
+# カスタムCSS (Custom CSS)
+# ==========================================
+# 日本語フォント(Noto Sans JP)を正しく適用するためのCSS
+# docs/stylesheets/extra.css を作成し、以下を記述することを推奨:
+# body { font-family: "Roboto", "Noto Sans JP", sans-serif; }
+extra_css:
+  - stylesheets/extra.css
+
+# ==========================================
+# フッター (Footer)
+# ==========================================
+copyright: Copyright &copy; 2024 AI Tool Database

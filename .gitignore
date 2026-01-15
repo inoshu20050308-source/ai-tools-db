@@ -1,0 +1,5 @@
+.env
+__pycache__/
+*.log
+seo_content.db
+my_site/site/
