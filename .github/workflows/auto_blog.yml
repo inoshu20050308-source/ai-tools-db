@@ -75,7 +75,6 @@ jobs:
           # (エラー回避のため、差分がない場合は何もしないロジック)
           git diff --quiet && git diff --staged --quiet || (git commit -m "Auto-update: Content & Database [skip ci]" && git push)
 
-      # --- デプロイ ---
-      # MkDocsをビルドして gh-pages ブランチへデプロイ
-      - name: Deploy to GitHub Pages
-        run: mkdocs gh-deploy --force
+     - name: Deploy to GitHub Pages
+        # my_site フォルダの設定ファイルを使うように指定
+        run: mkdocs gh-deploy --config-file my_site/mkdocs.yml --force
