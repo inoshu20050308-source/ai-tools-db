@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
-         <loc>https://example.com/</loc>
+         <loc>https://inoshu20050308-source.github.io/ai-tools-db/</loc>
          <lastmod>2026-01-16</lastmod>
     </url>
     <url>
-         <loc>https://example.com/tools/midjourney/</loc>
+         <loc>https://inoshu20050308-source.github.io/ai-tools-db/tools/midjourney/</loc>
          <lastmod>2026-01-16</lastmod>
     </url>
     <url>
-         <loc>https://example.com/tools/notion-ai/</loc>
+         <loc>https://inoshu20050308-source.github.io/ai-tools-db/tools/notion-ai/</loc>
          <lastmod>2026-01-16</lastmod>
     </url>
 </urlset>
