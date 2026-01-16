@@ -30,7 +30,7 @@ class ScraperConfig:
     db_path: str = "seo_content.db"
     max_retries: int = 3
 
-# FutureTools用の設定（既存）
+# FutureTools用の設定（既存維持）
 CONFIG = ScraperConfig(
     base_url="https://www.futuretools.io",
     target_urls=[
@@ -50,9 +50,16 @@ CONFIG = ScraperConfig(
     }
 )
 
+# ---------------------------------------------------------
+# Security Evasion: Modern User-Agents List
+# ---------------------------------------------------------
 USER_AGENTS = [
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
-    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Safari/537.36",
+    # Windows 10 / Chrome 120
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    # Windows 10 / Edge
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/120.0.0.0",
+    # Mac / Chrome
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
 ]
 
 # ==========================================
@@ -63,41 +70,37 @@ class Scraper:
         self.config = config
         self.data_buffer: List[Dict[str, Any]] = []
 
-    async def _get_random_ua(self) -> str:
+    def _get_random_ua(self) -> str:
         return random.choice(USER_AGENTS)
 
     async def _human_like_delay(self):
+        """1秒〜3秒のランダム待機で人間らしさを演出"""
         await asyncio.sleep(random.uniform(1.0, 3.0))
 
     # ---------------------------------------------------------
-    # 既存機能: FutureToolsの詳細ページスクレイピング
+    # 既存機能 1: FutureTools
     # ---------------------------------------------------------
     async def extract_future_tools(self, page: Page, url: str) -> Optional[Dict[str, Any]]:
-        """FutureToolsの個別ページからデータを取得"""
         try:
             await page.goto(url, wait_until="domcontentloaded", timeout=30000)
             await self._human_like_delay()
 
             s = self.config.selectors
 
-            # タイトル取得
             if await page.locator(s["title"]).count() > 0:
                 title = await page.locator(s["title"]).first.inner_text()
             else:
                 logger.warning(f"[FutureTools] Title not found for {url}")
                 return None
 
-            # 説明文取得
             description = ""
             if await page.locator(s["description"]).count() > 0:
                 description = await page.locator(s["description"]).first.inner_text()
 
-            # 価格取得
             price_text = ""
             if await page.locator(s["price"]).count() > 0:
                 price_text = await page.locator(s["price"]).first.inner_text()
             
-            # スペック（タグ）取得
             specs = ""
             if await page.locator(s["specs_table"]).count() > 0:
                 specs = await page.locator(s["specs_table"]).first.inner_text()
@@ -109,9 +112,9 @@ class Scraper:
                 "title": title,
                 "description": description,
                 "raw_price": price_text,
-                "image_url": "", # 簡易実装のため空
+                "image_url": "",
                 "specs": specs,
-                "category": "AI Tool", # カテゴリを明示
+                "category": "AI Tool",
                 "scraped_at": datetime.now().isoformat()
             }
 
@@ -120,14 +123,9 @@ class Scraper:
             return None
 
     # ---------------------------------------------------------
-    # 新機能: Zennのトレンドスクレイピング
+    # 既存機能 2: Zenn
     # ---------------------------------------------------------
     async def scrape_zenn_trends(self, page: Page) -> List[Dict[str, Any]]:
-        """
-        Zennのトップページからトレンド記事を取得する。
-        動的なクラス名(ArticleList_title__xxx)には依存せず、
-        セマンティックなタグ(article, h2)を使用する。
-        """
         zenn_url = "https://zenn.dev"
         zenn_data = []
         
@@ -136,24 +134,19 @@ class Scraper:
             await page.goto(zenn_url, wait_until="domcontentloaded", timeout=30000)
             await self._human_like_delay()
 
-            # 記事コンテナ（articleタグ）を取得
-            # Zennはトレンド一覧などで <article> タグを使用している
             articles = page.locator("article")
             count = await articles.count()
             logger.info(f"[Zenn] Found {count} articles.")
 
-            for i in range(min(count, 20)): # 上位20件のみ取得
+            for i in range(min(count, 10)):
                 try:
                     article_row = articles.nth(i)
                     
-                    # タイトル取得 (article内の h2)
                     title_el = article_row.locator("h2")
                     if await title_el.count() == 0:
                         continue
                     title = await title_el.first.inner_text()
 
-                    # リンク取得 (article内の aタグのhref)
-                    # 記事リンクは通常、タイトルを囲むか、article直下のaタグ
                     link_el = article_row.locator("a[href^='/']").first
                     if await link_el.count() == 0:
                         continue
@@ -161,21 +154,19 @@ class Scraper:
                     href = await link_el.get_attribute("href")
                     full_url = f"https://zenn.dev{href}"
 
-                    # 概要 (詳細ページには行かず、テンプレートで生成)
                     description = f"Zennのトレンド記事: {title}"
 
                     zenn_data.append({
                         "url": full_url,
                         "title": title,
                         "description": description,
-                        "raw_price": "Free",     # Zennは基本無料
+                        "raw_price": "Free",
                         "image_url": "",
-                        "specs": "Tech Trend",   # スペック欄にタグ代わり
-                        "category": "Tech News", # カテゴリ: 技術ニュース
+                        "specs": "Tech Trend",
+                        "category": "Tech News",
                         "scraped_at": datetime.now().isoformat()
                     })
-                    
-                    logger.info(f"[Zenn] Picked: {title}")
+                    logger.info(f"[Zenn] Picked: {title[:20]}...")
 
                 except Exception as e:
                     logger.warning(f"[Zenn] Error scraping article index {i}: {e}")
@@ -186,13 +177,166 @@ class Scraper:
 
         return zenn_data
 
+    # ---------------------------------------------------------
+    # 新機能 3: 価格.com ノートPCランキング (セレクタ強化版)
+    # ---------------------------------------------------------
+    async def scrape_kakaku_ranking(self, page: Page) -> List[Dict[str, Any]]:
+        """
+        価格.comのノートPCランキングからデータを取得する。
+        URL: https://kakaku.com/pc/note-pc/ranking_0020/
+        
+        【修正点】
+        - 複数のセレクタを順次試して、リンクと価格を確実に取得する
+        - エラーがあってもスキップして続行する
+        """
+        kakaku_url = "https://kakaku.com/pc/note-pc/ranking_0020/"
+        gadget_data = []
+
+        try:
+            logger.info("[Kakaku] Visiting Note PC Ranking...")
+            
+            # ページ遷移
+            await page.goto(kakaku_url, wait_until="domcontentloaded", timeout=60000)
+            
+            # 商品ボックス (.rkgBox) が表示されるまで待機
+            try:
+                await page.wait_for_selector(".rkgBox", timeout=20000)
+            except PlaywrightTimeoutError:
+                title = await page.title()
+                logger.error(f"[Kakaku] Wait timeout. Page structure might be different. Title: {title}")
+                return []
+
+            await self._human_like_delay()
+
+            # 商品ボックスを全て取得
+            boxes = page.locator(".rkgBox")
+            count = await boxes.count()
+            limit = min(count, 5) # 上位5件
+            
+            logger.info(f"[Kakaku] Found {count} items. Fetching top {limit}...")
+
+            for i in range(limit):
+                try:
+                    # i番目のボックスを取得
+                    box = boxes.nth(i)
+
+                    # -------------------------------------------------
+                    # 1. 商品名とリンクの取得 (Multi-Selector Trial)
+                    # -------------------------------------------------
+                    link_el = None
+                    
+                    # 候補リスト: 上から順に試す
+                    selectors_to_try = [
+                        "a.ckitemLink",         # パターン1: 一般的な商品リンク
+                        ".rankingItemName a",   # パターン2: ランキング用クラス
+                        ".ranking-read a",      # パターン3: 別レイアウト
+                        "td.textL a",           # パターン4: テーブル構造
+                        "a[href*='/item/']"     # パターン5: 最終手段 (URLの一部)
+                    ]
+
+                    for sel in selectors_to_try:
+                        candidate = box.locator(sel).first
+                        if await candidate.count() > 0:
+                            link_el = candidate
+                            # logger.info(f"[Kakaku] Rank {i+1}: Found link via '{sel}'")
+                            break
+                    
+                    if not link_el:
+                        logger.warning(f"[Kakaku] Rank {i+1}: Link element not found (Skipping).")
+                        continue
+                        
+                    raw_title = await link_el.inner_text()
+                    href = await link_el.get_attribute("href")
+                    
+                    # テキストクリーニング
+                    title = raw_title.replace('\n', ' ').strip()
+                    title = re.sub(r'\s+', ' ', title)
+
+                    # -------------------------------------------------
+                    # 2. 価格の取得 (Multi-Selector Trial)
+                    # -------------------------------------------------
+                    price_el = None
+                    price_selectors = [
+                        ".rkgPrice .yen",
+                        ".price .yen",
+                        "span.yen",
+                        ".price"
+                    ]
+                    
+                    raw_price = "Unknown"
+                    for sel in price_selectors:
+                        candidate = box.locator(sel).first
+                        if await candidate.count() > 0:
+                            price_text = await candidate.inner_text()
+                            # ¥マークやカンマを除去
+                            raw_price = price_text.replace("¥", "").replace(",", "").strip()
+                            break
+
+                    description = f"価格.com ノートPCランキング上位: {title}"
+
+                    gadget_data.append({
+                        "url": href,
+                        "title": title,
+                        "description": description,
+                        "raw_price": raw_price,
+                        "image_url": "",
+                        "specs": f"Kakaku.com Ranking #{i+1}",
+                        "category": "Gadget",
+                        "scraped_at": datetime.now().isoformat()
+                    })
+                    
+                    logger.info(f"[Kakaku] Picked Rank {i+1}: {title[:30]}...")
+
+                except Exception as e:
+                    logger.warning(f"[Kakaku] Error scraping rank {i+1}: {e}")
+                    continue
+
+        except Exception as e:
+            logger.error(f"[Kakaku] Scraping failed: {e}")
+
+        return gadget_data
+
+    # ---------------------------------------------------------
+    # パイプライン実行メインフロー
+    # ---------------------------------------------------------
     async def run(self) -> List[Dict[str, Any]]:
         async with async_playwright() as p:
-            browser = await p.chromium.launch(headless=True)
-            context = await browser.new_context(user_agent=await self._get_random_ua())
+            # -----------------------------------------------------
+            # Advanced Stealth Configuration
+            # -----------------------------------------------------
+            browser = await p.chromium.launch(
+                headless=True,
+                args=[
+                    '--disable-blink-features=AutomationControlled',
+                    '--no-sandbox',
+                    '--disable-infobars',
+                    '--disable-dev-shm-usage',
+                    '--disable-extensions',
+                    '--disable-gpu'
+                ]
+            )
+            
+            context = await browser.new_context(
+                user_agent=self._get_random_ua(),
+                locale='ja-JP',
+                timezone_id='Asia/Tokyo',
+                viewport={'width': 1280, 'height': 720},
+                java_script_enabled=True,
+                extra_http_headers={
+                    'referer': 'https://www.google.com/'
+                },
+                permissions=['geolocation']
+            )
+            
+            await context.add_init_script("""
+                Object.defineProperty(navigator, 'webdriver', {
+                    get: () => undefined
+                });
+            """)
+
             page = await context.new_page()
 
-            # 1. FutureTools (既存リスト) の処理
+            # 1. FutureTools
             for target_url in self.config.target_urls:
                 try:
                     data = await self.extract_future_tools(page, target_url)
@@ -201,9 +345,13 @@ class Scraper:
                 except Exception as e:
                     logger.error(f"Critical error processing {target_url}: {e}")
 
-            # 2. Zenn (トレンド) の処理を追加
+            # 2. Zenn
             zenn_articles = await self.scrape_zenn_trends(page)
             self.data_buffer.extend(zenn_articles)
+
+            # 3. Kakaku.com Gadgets
+            kakaku_gadgets = await self.scrape_kakaku_ranking(page)
+            self.data_buffer.extend(kakaku_gadgets)
 
             await browser.close()
             return self.data_buffer
@@ -227,24 +375,19 @@ class Cleaner:
 
         df = pd.DataFrame(raw_data)
         
-        # 欠損値処理
         if 'title' in df.columns:
             df.dropna(subset=['title'], inplace=True)
 
-        # 重複排除 (URLベース)
         df.drop_duplicates(subset=['url'], keep='last', inplace=True)
 
-        # テキスト正規化
         text_columns = ['title', 'description', 'specs', 'raw_price']
         for col in text_columns:
             if col in df.columns:
                 df[col] = df[col].apply(self.normalize_text)
 
-        # priceカラム
         if 'raw_price' in df.columns:
             df['price'] = df['raw_price'] 
             
-        # categoryカラムが欠落している場合の安全策（基本はScraperで入る）
         if 'category' not in df.columns:
              df['category'] = 'Uncategorized'
 
@@ -262,8 +405,6 @@ class Storage:
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         
-        # テーブル作成（categoryカラムを追加）
-        # priceはINTEGERではなくTEXTに変更（'Free'等の文字列が入るため）
         create_table_sql = """
         CREATE TABLE IF NOT EXISTS products (
             url TEXT PRIMARY KEY,
@@ -279,15 +420,11 @@ class Storage:
         """
         cursor.execute(create_table_sql)
         
-        # ---------------------------------------------------------
-        # DB Migration: categoryカラムが存在しない場合の追加処理
-        # ---------------------------------------------------------
         cursor.execute("PRAGMA table_info(products)")
         columns = [info[1] for info in cursor.fetchall()]
         
         if "category" not in columns:
             logger.info("Migrating Database: Adding 'category' column...")
-            # 既存のレコードは 'AI Tool' とみなす
             cursor.execute("ALTER TABLE products ADD COLUMN category TEXT DEFAULT 'AI Tool'")
             conn.commit()
         else:
@@ -306,7 +443,6 @@ class Storage:
         try:
             records = df.to_dict(orient='records')
             
-            # Upsert SQLに category を追加
             upsert_sql = """
             INSERT INTO products (url, title, description, price, image_url, specs, category, scraped_at)
             VALUES (:url, :title, :description, :price, :image_url, :specs, :category, :scraped_at)
@@ -335,9 +471,8 @@ class Storage:
 # 4. Main Pipeline Execution
 # ==========================================
 async def main():
-    logger.info("Starting SEO Data Pipeline (Targets: FutureTools & Zenn)...")
+    logger.info("Starting SEO Data Pipeline (FutureTools, Zenn, Kakaku.com)...")
 
-    # 1. Scraper
     scraper = Scraper(CONFIG)
     raw_data = await scraper.run()
 
@@ -345,11 +480,9 @@ async def main():
         logger.error("Scraping finished with no data.")
         return
 
-    # 2. Cleaner
     cleaner = Cleaner()
     cleaned_df = cleaner.process(raw_data)
 
-    # 3. Storage
     storage = Storage(CONFIG.db_path)
     storage.save(cleaned_df)
 
