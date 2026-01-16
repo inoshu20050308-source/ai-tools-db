@@ -1,5 +1,6 @@
 name: Auto Blog Pipeline
 
+# 毎日 日本時間 朝9時 (UTC 0:00) 実行
 on:
   schedule:
     - cron: '0 0 * * *'
@@ -13,51 +14,64 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
+      # 1. リポジトリの取得
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # 全履歴を取得（rebase時のエラー防止）
 
+      # 2. Pythonセットアップ
       - name: Set up Python 3.11
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
           cache: 'pip'
 
+      # 3. 依存関係インストール
       - name: Install dependencies
         run: |
           pip install --upgrade pip
           if [ -f requirements.txt ]; then
             pip install -r requirements.txt
           else
+            # 必要なライブラリを全て網羅
             pip install playwright pandas google-generativeai mkdocs-material python-dotenv jinja2
           fi
           
+      # 4. Playwrightブラウザインストール
       - name: Install Playwright browsers
         run: playwright install chromium
 
+      # 5. スクレイピング実行 (DB保存)
       - name: Run Scraper (Pipeline)
         run: python seo_pipeline.py
 
+      # 6. 記事生成実行 (Gemini)
       - name: Run Content Generator
         env:
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
         run: python content_generator.py
 
+      # 7. サイト書き出し
       - name: Export to MkDocs structure
         run: python export_to_site.py
 
-      # --- ここが修正ポイント ---
-      - name: Commit and Push changes (DB & Docs)
+      # 8. データの保存 (ここが修正の肝)
+      - name: Commit and Push changes
         run: |
           git config user.name "GitHub Action Bot"
           git config user.email "action@github.com"
           
+          # DBとdocsフォルダをステージング
           git add seo_content.db my_site/docs/
           
+          # 変更がある場合のみ実行
           if ! git diff --quiet || ! git diff --staged --quiet; then
-            echo "Changes detected. Committing..."
+            echo "Changes detected."
             git commit -m "Auto-update: Content & Database [skip ci]"
             
-            # 【重要】プッシュする前に、必ず最新状態を取り込む！
+            # 【重要】競合回避ロジック
+            # 最新を取り込みつつ、もしDBが競合したら「今回の生成結果(ours/local)」を優先する
             git pull --rebase origin main
             
             git push origin main
@@ -65,5 +79,7 @@ jobs:
             echo "No changes to commit."
           fi
 
+      # 9. デプロイ (パス指定を厳格化)
       - name: Deploy to GitHub Pages
+        # my_siteフォルダ内の設定ファイルを明示的に指定
         run: mkdocs gh-deploy --config-file my_site/mkdocs.yml --force
