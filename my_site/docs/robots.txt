@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://inoshu20050308-source.github.io/ai-tools-db/sitemap.xml
