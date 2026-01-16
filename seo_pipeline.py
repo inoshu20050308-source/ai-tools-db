@@ -30,26 +30,20 @@ class ScraperConfig:
     db_path: str = "seo_content.db"
     max_retries: int = 3
 
-# ==========================================
-# ここを修正: FutureToolsの「詳細ページ」を直接狙う設定
-# ==========================================
+# FutureTools用の設定（既存）
 CONFIG = ScraperConfig(
     base_url="https://www.futuretools.io",
-    # 練習用に、具体的なツールの詳細ページURLをリストに入れています
     target_urls=[
         "https://www.futuretools.io/tools/chatgpt",
         "https://www.futuretools.io/tools/midjourney",
         "https://www.futuretools.io/tools/notion-ai",
     ],
     selectors={
-        # 詳細ページ内の要素を指定
-        "title": "h1",                         # ツール名
-        "description": ".rich-text-block",     # 説明文
-        "price": ".pricing-category",          # 価格タグ (Free/Paidなど)
-        "image": ".main-image",                # 画像 (クラス名は仮定、なければ失敗ログが出るだけ)
-        "specs_table": ".tags-container",      # タグ一覧をスペックとして取得
-        
-        # 今回は詳細ページ直指定なので以下はダミー（エラー回避用）
+        "title": "h1",
+        "description": ".rich-text-block",
+        "price": ".pricing-category",
+        "image": ".main-image",
+        "specs_table": ".tags-container",
         "product_container": "body",
         "link": "a",
         "next_pagination": ".next"
@@ -75,18 +69,22 @@ class Scraper:
     async def _human_like_delay(self):
         await asyncio.sleep(random.uniform(1.0, 3.0))
 
-    async def extract_page_details(self, page: Page, url: str) -> Optional[Dict[str, Any]]:
+    # ---------------------------------------------------------
+    # 既存機能: FutureToolsの詳細ページスクレイピング
+    # ---------------------------------------------------------
+    async def extract_future_tools(self, page: Page, url: str) -> Optional[Dict[str, Any]]:
+        """FutureToolsの個別ページからデータを取得"""
         try:
             await page.goto(url, wait_until="domcontentloaded", timeout=30000)
             await self._human_like_delay()
 
             s = self.config.selectors
 
-            # タイトル取得（必須）
+            # タイトル取得
             if await page.locator(s["title"]).count() > 0:
                 title = await page.locator(s["title"]).first.inner_text()
             else:
-                logger.warning(f"Title not found for {url}")
+                logger.warning(f"[FutureTools] Title not found for {url}")
                 return None
 
             # 説明文取得
@@ -94,36 +92,99 @@ class Scraper:
             if await page.locator(s["description"]).count() > 0:
                 description = await page.locator(s["description"]).first.inner_text()
 
-            # 価格/タグ取得
+            # 価格取得
             price_text = ""
             if await page.locator(s["price"]).count() > 0:
                 price_text = await page.locator(s["price"]).first.inner_text()
             
-            # スペック（タグ情報）取得
+            # スペック（タグ）取得
             specs = ""
             if await page.locator(s["specs_table"]).count() > 0:
                 specs = await page.locator(s["specs_table"]).first.inner_text()
 
-            # 画像URL
-            image_url = ""
-            # imgタグの取得ロジックはサイト依存が強いため、今回はエラー回避のためスキップするか簡易実装
-            # img_element = page.locator(s["image"]).first ... (省略)
-
-            logger.info(f"Scraped: {title}")
+            logger.info(f"[FutureTools] Scraped: {title}")
 
             return {
                 "url": url,
                 "title": title,
                 "description": description,
                 "raw_price": price_text,
-                "image_url": image_url,
-                "specs": specs, 
+                "image_url": "", # 簡易実装のため空
+                "specs": specs,
+                "category": "AI Tool", # カテゴリを明示
                 "scraped_at": datetime.now().isoformat()
             }
 
         except Exception as e:
-            logger.error(f"Failed to scrape {url}: {e}")
+            logger.error(f"[FutureTools] Failed to scrape {url}: {e}")
             return None
+
+    # ---------------------------------------------------------
+    # 新機能: Zennのトレンドスクレイピング
+    # ---------------------------------------------------------
+    async def scrape_zenn_trends(self, page: Page) -> List[Dict[str, Any]]:
+        """
+        Zennのトップページからトレンド記事を取得する。
+        動的なクラス名(ArticleList_title__xxx)には依存せず、
+        セマンティックなタグ(article, h2)を使用する。
+        """
+        zenn_url = "https://zenn.dev"
+        zenn_data = []
+        
+        try:
+            logger.info("[Zenn] Starting trend scraping...")
+            await page.goto(zenn_url, wait_until="domcontentloaded", timeout=30000)
+            await self._human_like_delay()
+
+            # 記事コンテナ（articleタグ）を取得
+            # Zennはトレンド一覧などで <article> タグを使用している
+            articles = page.locator("article")
+            count = await articles.count()
+            logger.info(f"[Zenn] Found {count} articles.")
+
+            for i in range(min(count, 20)): # 上位20件のみ取得
+                try:
+                    article_row = articles.nth(i)
+                    
+                    # タイトル取得 (article内の h2)
+                    title_el = article_row.locator("h2")
+                    if await title_el.count() == 0:
+                        continue
+                    title = await title_el.first.inner_text()
+
+                    # リンク取得 (article内の aタグのhref)
+                    # 記事リンクは通常、タイトルを囲むか、article直下のaタグ
+                    link_el = article_row.locator("a[href^='/']").first
+                    if await link_el.count() == 0:
+                        continue
+                    
+                    href = await link_el.get_attribute("href")
+                    full_url = f"https://zenn.dev{href}"
+
+                    # 概要 (詳細ページには行かず、テンプレートで生成)
+                    description = f"Zennのトレンド記事: {title}"
+
+                    zenn_data.append({
+                        "url": full_url,
+                        "title": title,
+                        "description": description,
+                        "raw_price": "Free",     # Zennは基本無料
+                        "image_url": "",
+                        "specs": "Tech Trend",   # スペック欄にタグ代わり
+                        "category": "Tech News", # カテゴリ: 技術ニュース
+                        "scraped_at": datetime.now().isoformat()
+                    })
+                    
+                    logger.info(f"[Zenn] Picked: {title}")
+
+                except Exception as e:
+                    logger.warning(f"[Zenn] Error scraping article index {i}: {e}")
+                    continue
+
+        except Exception as e:
+            logger.error(f"[Zenn] Top page scraping failed: {e}")
+
+        return zenn_data
 
     async def run(self) -> List[Dict[str, Any]]:
         async with async_playwright() as p:
@@ -131,14 +192,18 @@ class Scraper:
             context = await browser.new_context(user_agent=await self._get_random_ua())
             page = await context.new_page()
 
+            # 1. FutureTools (既存リスト) の処理
             for target_url in self.config.target_urls:
                 try:
-                    data = await self.extract_page_details(page, target_url)
+                    data = await self.extract_future_tools(page, target_url)
                     if data:
                         self.data_buffer.append(data)
                 except Exception as e:
                     logger.error(f"Critical error processing {target_url}: {e}")
-                    continue
+
+            # 2. Zenn (トレンド) の処理を追加
+            zenn_articles = await self.scrape_zenn_trends(page)
+            self.data_buffer.extend(zenn_articles)
 
             await browser.close()
             return self.data_buffer
@@ -166,7 +231,7 @@ class Cleaner:
         if 'title' in df.columns:
             df.dropna(subset=['title'], inplace=True)
 
-        # 重複排除
+        # 重複排除 (URLベース)
         df.drop_duplicates(subset=['url'], keep='last', inplace=True)
 
         # テキスト正規化
@@ -175,9 +240,13 @@ class Cleaner:
             if col in df.columns:
                 df[col] = df[col].apply(self.normalize_text)
 
-        # priceカラムの整理（raw_priceをそのままpriceへ）
+        # priceカラム
         if 'raw_price' in df.columns:
             df['price'] = df['raw_price'] 
+            
+        # categoryカラムが欠落している場合の安全策（基本はScraperで入る）
+        if 'category' not in df.columns:
+             df['category'] = 'Uncategorized'
 
         return df
 
@@ -193,7 +262,8 @@ class Storage:
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         
-        # priceカラムの定義をINTEGERからTEXTへ変更（Free/Paidなどの文字列が入るため）
+        # テーブル作成（categoryカラムを追加）
+        # priceはINTEGERではなくTEXTに変更（'Free'等の文字列が入るため）
         create_table_sql = """
         CREATE TABLE IF NOT EXISTS products (
             url TEXT PRIMARY KEY,
@@ -202,12 +272,27 @@ class Storage:
             price TEXT,
             image_url TEXT,
             specs TEXT,
+            category TEXT,
             scraped_at TEXT,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
         """
         cursor.execute(create_table_sql)
-        conn.commit()
+        
+        # ---------------------------------------------------------
+        # DB Migration: categoryカラムが存在しない場合の追加処理
+        # ---------------------------------------------------------
+        cursor.execute("PRAGMA table_info(products)")
+        columns = [info[1] for info in cursor.fetchall()]
+        
+        if "category" not in columns:
+            logger.info("Migrating Database: Adding 'category' column...")
+            # 既存のレコードは 'AI Tool' とみなす
+            cursor.execute("ALTER TABLE products ADD COLUMN category TEXT DEFAULT 'AI Tool'")
+            conn.commit()
+        else:
+            conn.commit()
+            
         conn.close()
 
     def save(self, df: pd.DataFrame):
@@ -221,15 +306,17 @@ class Storage:
         try:
             records = df.to_dict(orient='records')
             
+            # Upsert SQLに category を追加
             upsert_sql = """
-            INSERT INTO products (url, title, description, price, image_url, specs, scraped_at)
-            VALUES (:url, :title, :description, :price, :image_url, :specs, :scraped_at)
+            INSERT INTO products (url, title, description, price, image_url, specs, category, scraped_at)
+            VALUES (:url, :title, :description, :price, :image_url, :specs, :category, :scraped_at)
             ON CONFLICT(url) DO UPDATE SET
                 title=excluded.title,
                 description=excluded.description,
                 price=excluded.price,
                 image_url=excluded.image_url,
                 specs=excluded.specs,
+                category=excluded.category,
                 scraped_at=excluded.scraped_at,
                 updated_at=CURRENT_TIMESTAMP;
             """
@@ -248,7 +335,7 @@ class Storage:
 # 4. Main Pipeline Execution
 # ==========================================
 async def main():
-    logger.info("Starting Programmatic SEO Data Pipeline (FutureTools Target)...")
+    logger.info("Starting SEO Data Pipeline (Targets: FutureTools & Zenn)...")
 
     # 1. Scraper
     scraper = Scraper(CONFIG)
