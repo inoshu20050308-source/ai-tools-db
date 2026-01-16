@@ -2,3 +2,12 @@
 __pycache__/
 *.log
 my_site/site/
+# ログファイルはGit管理しない
+*.log
+
+# Macの不要ファイル（もしあれば）
+.DS_Store
+
+# 仮想環境（もしあれば）
+venv/
+env/
