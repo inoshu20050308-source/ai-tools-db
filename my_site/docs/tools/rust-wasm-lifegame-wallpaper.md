@@ -54,3 +54,18 @@ Web開発者、特にパフォーマンスが重視されるプロジェクト�
     <img border="0" width="120" height="90" alt="" src="https://www25.a8.net/svt/bgt?aid=260116569100&wid=001&eno=01&mid=s00000008903001073000&mc=1"></a>
     <img border="0" width="1" height="1" src="https://www11.a8.net/0.gif?a8mat=4AV789+1NJD9U+1WP2+6DZBL" alt="">
 </div>
+
+
+---
+
+<div class="grid cards" markdown>
+-   [:material-link-variant: 元のページで詳細を見る](https://zenn.dev/108_twil3akine/articles/rust-wasm-lifegame-wallpaper)
+</div>
+
+
+## 🛍️ この商品をさがす
+<div class="grid cards" markdown>
+-   [:material-cart: Amazonで探す](https://www.amazon.co.jp/s?k=Rust%2BWasm%E3%81%A7%E7%88%86%E9%80%9F%E3%83%A9%E3%82%A4%E3%83%95%E3%82%B2%E3%83%BC%E3%83%A0%E3%82%92%E4%BD%9C%E3%81%A3%E3%81%A6%E5%8B%95%E3%81%8F%E5%A3%81%E7%B4%99%E3%81%AB%E3%81%99%E3%82%8B)
+-   [:material-store: 楽天市場で探す](https://search.rakuten.co.jp/search/mall/Rust%2BWasm%E3%81%A7%E7%88%86%E9%80%9F%E3%83%A9%E3%82%A4%E3%83%95%E3%82%B2%E3%83%BC%E3%83%A0%E3%82%92%E4%BD%9C%E3%81%A3%E3%81%A6%E5%8B%95%E3%81%8F%E5%A3%81%E7%B4%99%E3%81%AB%E3%81%99%E3%82%8B)
+-   [:material-shopping: Yahoo!で探す](https://shopping.yahoo.co.jp/search?p=Rust%2BWasm%E3%81%A7%E7%88%86%E9%80%9F%E3%83%A9%E3%82%A4%E3%83%95%E3%82%B2%E3%83%BC%E3%83%A0%E3%82%92%E4%BD%9C%E3%81%A3%E3%81%A6%E5%8B%95%E3%81%8F%E5%A3%81%E7%B4%99%E3%81%AB%E3%81%99%E3%82%8B)
+</div>

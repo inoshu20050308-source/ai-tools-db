@@ -52,3 +52,18 @@ LLMが膨大なデータから文脈を理解し、人間では思いつかな�
     <img border="0" width="120" height="90" alt="" src="https://www25.a8.net/svt/bgt?aid=260116569100&wid=001&eno=01&mid=s00000008903001073000&mc=1"></a>
     <img border="0" width="1" height="1" src="https://www11.a8.net/0.gif?a8mat=4AV789+1NJD9U+1WP2+6DZBL" alt="">
 </div>
+
+
+---
+
+<div class="grid cards" markdown>
+-   [:material-link-variant: 元のページで詳細を見る](https://zenn.dev/hideyuki_toyama/articles/horizontal-guard-rails)
+</div>
+
+
+## 🛍️ この商品をさがす
+<div class="grid cards" markdown>
+-   [:material-cart: Amazonで探す](https://www.amazon.co.jp/s?k=%E3%80%8C%E6%A8%AA%E3%81%AE%E3%82%AC%E3%83%BC%E3%83%89%E3%83%AC%E3%83%BC%E3%83%AB%E3%80%8D%E3%81%A7AI%E3%81%AB%E3%82%A2%E3%83%BC%E3%82%AD%E3%83%86%E3%82%AF%E3%83%81%E3%83%A3%E3%82%92%E6%95%99%E3%81%88%E3%82%8B%E3%81%AE%E3%82%92%E3%82%84%E3%82%81%E3%81%9F%E8%A9%B1)
+-   [:material-store: 楽天市場で探す](https://search.rakuten.co.jp/search/mall/%E3%80%8C%E6%A8%AA%E3%81%AE%E3%82%AC%E3%83%BC%E3%83%89%E3%83%AC%E3%83%BC%E3%83%AB%E3%80%8D%E3%81%A7AI%E3%81%AB%E3%82%A2%E3%83%BC%E3%82%AD%E3%83%86%E3%82%AF%E3%83%81%E3%83%A3%E3%82%92%E6%95%99%E3%81%88%E3%82%8B%E3%81%AE%E3%82%92%E3%82%84%E3%82%81%E3%81%9F%E8%A9%B1)
+-   [:material-shopping: Yahoo!で探す](https://shopping.yahoo.co.jp/search?p=%E3%80%8C%E6%A8%AA%E3%81%AE%E3%82%AC%E3%83%BC%E3%83%89%E3%83%AC%E3%83%BC%E3%83%AB%E3%80%8D%E3%81%A7AI%E3%81%AB%E3%82%A2%E3%83%BC%E3%82%AD%E3%83%86%E3%82%AF%E3%83%81%E3%83%A3%E3%82%92%E6%95%99%E3%81%88%E3%82%8B%E3%81%AE%E3%82%92%E3%82%84%E3%82%81%E3%81%9F%E8%A9%B1)
+</div>

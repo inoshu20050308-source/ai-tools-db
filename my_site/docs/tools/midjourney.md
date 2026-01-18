@@ -60,3 +60,18 @@ Midjourneyは、特定のユーザー層にとっては**即買い**だ。
     <img border="0" width="120" height="90" alt="" src="https://www25.a8.net/svt/bgt?aid=260116569100&wid=001&eno=01&mid=s00000008903001073000&mc=1"></a>
     <img border="0" width="1" height="1" src="https://www11.a8.net/0.gif?a8mat=4AV789+1NJD9U+1WP2+6DZBL" alt="">
 </div>
+
+
+---
+
+<div class="grid cards" markdown>
+-   [:material-link-variant: 元のページで詳細を見る](https://www.futuretools.io/tools/midjourney)
+</div>
+
+
+## 🛍️ この商品をさがす
+<div class="grid cards" markdown>
+-   [:material-cart: Amazonで探す](https://www.amazon.co.jp/s?k=Midjourney)
+-   [:material-store: 楽天市場で探す](https://search.rakuten.co.jp/search/mall/Midjourney)
+-   [:material-shopping: Yahoo!で探す](https://shopping.yahoo.co.jp/search?p=Midjourney)
+</div>

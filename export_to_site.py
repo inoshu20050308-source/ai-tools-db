@@ -4,6 +4,7 @@ import shutil
 import stat
 import time
 import logging
+import urllib.parse
 from collections import defaultdict
 
 # ==========================================
@@ -106,11 +107,9 @@ def export_articles():
             category = row['category'] if row['category'] else 'Uncategorized'
 
             # ---------------------------------------------------------
-            # 【追加処理】参照元リンクボタンを記事末尾に追加
+            # 追加処理1: 参照元リンクボタンを記事末尾に追加
             # ---------------------------------------------------------
             if url:
-                # MkDocs Material テーマ用カード型リンク
-                # generated_body の後に区切り線とボタンを追加
                 link_block = f"""
 
 ---
@@ -120,6 +119,31 @@ def export_articles():
 </div>
 """
                 body += link_block
+
+            # ---------------------------------------------------------
+            # 追加処理2: ECサイト検索ボタンの追加 (Amazon/楽天/Yahoo)
+            # ---------------------------------------------------------
+            if title:
+                # タイトルをURLエンコード
+                encoded_title = urllib.parse.quote(title)
+                
+                # 各サイトの検索URL生成
+                amazon_url = f"https://www.amazon.co.jp/s?k={encoded_title}"
+                rakuten_url = f"https://search.rakuten.co.jp/search/mall/{encoded_title}"
+                yahoo_url = f"https://shopping.yahoo.co.jp/search?p={encoded_title}"
+
+                # MkDocs Material用のカードグリッド
+                ec_block = f"""
+
+## 🛍️ この商品をさがす
+<div class="grid cards" markdown>
+-   [:material-cart: Amazonで探す]({amazon_url})
+-   [:material-store: 楽天市場で探す]({rakuten_url})
+-   [:material-shopping: Yahoo!で探す]({yahoo_url})
+</div>
+"""
+                body += ec_block
+
             # ---------------------------------------------------------
 
             filename = safe_filename(url)

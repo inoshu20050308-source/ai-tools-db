@@ -51,3 +51,18 @@ ReactとTypeScriptの組み合わせは、モダンなフロントエンド開�
     <img border="0" width="120" height="90" alt="" src="https://www25.a8.net/svt/bgt?aid=260116569100&wid=001&eno=01&mid=s00000008903001073000&mc=1"></a>
     <img border="0" width="1" height="1" src="https://www11.a8.net/0.gif?a8mat=4AV789+1NJD9U+1WP2+6DZBL" alt="">
 </div>
+
+
+---
+
+<div class="grid cards" markdown>
+-   [:material-link-variant: 元のページで詳細を見る](https://zenn.dev/mitsuo119/articles/cd5feaee09262b)
+</div>
+
+
+## 🛍️ この商品をさがす
+<div class="grid cards" markdown>
+-   [:material-cart: Amazonで探す](https://www.amazon.co.jp/s?k=React%C3%97TypeScript%E3%81%A7%E4%BA%8B%E6%95%85%E3%82%89%E3%81%AA%E3%81%84%E5%9E%8B%E8%A8%AD%E8%A8%88%EF%BC%9A%E7%8F%BE%E5%A0%B4%E3%81%A7%E5%8A%B9%E3%81%8F%E3%83%91%E3%82%BF%E3%83%BC%E3%83%B310%E9%81%B8)
+-   [:material-store: 楽天市場で探す](https://search.rakuten.co.jp/search/mall/React%C3%97TypeScript%E3%81%A7%E4%BA%8B%E6%95%85%E3%82%89%E3%81%AA%E3%81%84%E5%9E%8B%E8%A8%AD%E8%A8%88%EF%BC%9A%E7%8F%BE%E5%A0%B4%E3%81%A7%E5%8A%B9%E3%81%8F%E3%83%91%E3%82%BF%E3%83%BC%E3%83%B310%E9%81%B8)
+-   [:material-shopping: Yahoo!で探す](https://shopping.yahoo.co.jp/search?p=React%C3%97TypeScript%E3%81%A7%E4%BA%8B%E6%95%85%E3%82%89%E3%81%AA%E3%81%84%E5%9E%8B%E8%A8%AD%E8%A8%88%EF%BC%9A%E7%8F%BE%E5%A0%B4%E3%81%A7%E5%8A%B9%E3%81%8F%E3%83%91%E3%82%BF%E3%83%BC%E3%83%B310%E9%81%B8)
+</div>

@@ -64,3 +64,18 @@ Google Cloudがこの領域でハッカソンを開催する意図は明確だ�
     <img border="0" width="120" height="90" alt="" src="https://www25.a8.net/svt/bgt?aid=260116569100&wid=001&eno=01&mid=s00000008903001073000&mc=1"></a>
     <img border="0" width="1" height="1" src="https://www11.a8.net/0.gif?a8mat=4AV789+1NJD9U+1WP2+6DZBL" alt="">
 </div>
+
+
+---
+
+<div class="grid cards" markdown>
+-   [:material-link-variant: 元のページで詳細を見る](https://zenn.dev/hackathons/google-cloud-japan-ai-hackathon-vol4)
+</div>
+
+
+## 🛍️ この商品をさがす
+<div class="grid cards" markdown>
+-   [:material-cart: Amazonで探す](https://www.amazon.co.jp/s?k=%E7%AC%AC4%E5%9B%9E%20Agentic%20AI%20Hackathon%20with%20Google%20Cloud%20%E5%8F%97%E4%BB%98%E9%96%8B%E5%A7%8B%EF%BC%81)
+-   [:material-store: 楽天市場で探す](https://search.rakuten.co.jp/search/mall/%E7%AC%AC4%E5%9B%9E%20Agentic%20AI%20Hackathon%20with%20Google%20Cloud%20%E5%8F%97%E4%BB%98%E9%96%8B%E5%A7%8B%EF%BC%81)
+-   [:material-shopping: Yahoo!で探す](https://shopping.yahoo.co.jp/search?p=%E7%AC%AC4%E5%9B%9E%20Agentic%20AI%20Hackathon%20with%20Google%20Cloud%20%E5%8F%97%E4%BB%98%E9%96%8B%E5%A7%8B%EF%BC%81)
+</div>
