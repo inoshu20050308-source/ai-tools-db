@@ -36,6 +36,7 @@ Zennなどの技術メディアで話題のトピックを解説。
 - [【入門】リモートワーク 快適グッズとは？初心者向け徹底解説](tools/81d4e688ac04138ea5ea47e3cc1fccf1.md)
 - [【入門】Python スクレイピング 入門とは？初心者向け徹底解説](tools/f564b74ba7c37f0cc91d83bf2f47b47e.md)
 - [【入門】Notion テンプレート 配布とは？初心者向け徹底解説](tools/3108971b8b79ec84beec8c2db6539c3c.md)
+- [【入門】Xserver ConoHa 比較とは？初心者向け徹底解説](tools/1ab2877df87ff7f3366fb4e09754cbab.md)
 
 ## 🤖 AIツールデータベース (AI Tool)
 
