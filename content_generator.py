@@ -1,7 +1,6 @@
 import os
 import sqlite3
 import logging
-import time
 import hashlib
 import google.generativeai as genai
 from dotenv import load_dotenv
@@ -11,18 +10,18 @@ from dotenv import load_dotenv
 # ==========================================
 load_dotenv()
 
-# Gemini API設定
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 if not GEMINI_API_KEY:
     raise ValueError("GEMINI_API_KEY is not set in .env")
 
 genai.configure(api_key=GEMINI_API_KEY)
-model = genai.GenerativeModel("gemini-2.0-flash")
+
+# 安定版の最新モデルを指定
+model = genai.GenerativeModel("gemini-flash-latest")
 
 DB_PATH = "seo_content.db"
-SITE_BASE_URL = os.getenv("SITE_BASE_URL", "https://example.com")
+SITE_BASE_URL = os.getenv("SITE_BASE_URL", "https://techino35.github.io/ai-tools-db")
 
-# ログ設定
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
@@ -43,16 +42,16 @@ class ContentGenerator:
             return ""
 
     def _save_article(self, url: str, title: str, body: str, category: str):
-        """生成された記事をDBに保存（新規挿入または更新）"""
+        """生成された記事をDBに保存"""
         conn = self._get_connection()
         cursor = conn.cursor()
         try:
-            # 既にURLが存在するか確認
-            cursor.execute("SELECT id FROM products WHERE url = ?", (url,))
+            # 【修正箇所】id ではなく url をチェックする
+            cursor.execute("SELECT url FROM products WHERE url = ?", (url,))
             row = cursor.fetchone()
 
             if row:
-                # 存在する場合は更新
+                # 更新
                 cursor.execute("""
                     UPDATE products 
                     SET generated_body = ?, title = ?, category = ? 
@@ -60,10 +59,10 @@ class ContentGenerator:
                 """, (body, title, category, url))
                 logger.info(f"Updated article: {title}")
             else:
-                # 新規作成
+                # 新規作成（テーブル定義に合わせてカラムを指定）
                 cursor.execute("""
-                    INSERT INTO products (url, title, generated_body, category, scraped_at, promoted)
-                    VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, 0)
+                    INSERT INTO products (url, title, generated_body, category, scraped_at)
+                    VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
                 """, (url, title, body, category))
                 logger.info(f"Created new article: {title}")
             
@@ -74,22 +73,16 @@ class ContentGenerator:
             conn.close()
 
     def generate_article(self, target_keyword: str = None):
-        """
-        記事生成のメイン処理
-        - target_keywordがある場合: そのキーワードで記事を新規作成
-        - target_keywordがない場合: DBから本文未生成のレコードを取得して生成
-        """
+        """記事生成メイン処理"""
         
-        # -------------------------------------------------
-        # ケースA: キーワード指定あり（指名生産モード）
-        # -------------------------------------------------
+        # 指名生産モード
         if target_keyword:
             logger.info(f"Target keyword provided: {target_keyword}")
             
             title = f"【入門】{target_keyword}とは？初心者向け徹底解説"
-            category = "Tech News" # デフォルトカテゴリ
+            category = "Tech News"
             
-            # 仮想URLの生成（DBの主キー用）
+            # 仮想URLの生成
             url_hash = hashlib.md5(target_keyword.encode()).hexdigest()
             dummy_url = f"{SITE_BASE_URL}/keyword/{url_hash}.html"
 
@@ -104,7 +97,8 @@ class ContentGenerator:
             3. 具体的な活用事例やコード例
             4. まとめ
             
-            読者はIT初心者〜中級者です。専門用語には簡単な解説を入れてください。
+            見出しは ## や ### を使ってください。
+            商品リンク用のプレースホルダーなどは不要です。
             """
             
             logger.info("Generating content via Gemini...")
@@ -114,49 +108,24 @@ class ContentGenerator:
                 self._save_article(dummy_url, title, generated_body, category)
             return
 
-        # -------------------------------------------------
-        # ケースB: キーワード指定なし（在庫処理モード）
-        # -------------------------------------------------
+        # 在庫処理モード（今回は使いませんが残しておきます）
         conn = self._get_connection()
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
-        
         try:
-            # 本文が空のレコードを1つ取得
-            cursor.execute("SELECT url, title FROM products WHERE generated_body IS NULL OR generated_body = '' LIMIT 1")
+            cursor.execute("SELECT url, title FROM products WHERE generated_body IS NULL LIMIT 1")
             row = cursor.fetchone()
-            
-            if not row:
-                logger.info("No pending articles found in DB.")
-                return
-
-            current_url = row['url']
-            current_title = row['title']
-            
-            logger.info(f"Processing existing DB entry: {current_title}")
-
-            prompt = f"""
-            以下の製品/トピックについて、魅力的な紹介記事をMarkdownで書いてください。
-            
-            トピック: {current_title}
-            参考URL: {current_url}
-            
-            メリット、デメリット、おすすめの利用シーンを含めてください。
-            """
-
-            generated_body = self._generate_text_with_gemini(prompt)
-
-            if generated_body:
-                # 既存レコードを更新
-                self._save_article(current_url, current_title, generated_body, "Uncategorized")
-
+            if row:
+                current_url = row['url']
+                current_title = row['title']
+                prompt = f"トピック: {current_title} について解説記事を書いてください。"
+                generated_body = self._generate_text_with_gemini(prompt)
+                if generated_body:
+                    self._save_article(current_url, current_title, generated_body, "Uncategorized")
         except Exception as e:
-            logger.error(f"Error in batch processing: {e}")
+            logger.error(f"Error: {e}")
         finally:
             conn.close()
 
-# 単体実行用
 if __name__ == "__main__":
     generator = ContentGenerator(DB_PATH)
-    # テスト: 引数なしで実行
-    generator.generate_article()

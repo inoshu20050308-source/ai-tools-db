@@ -22,6 +22,11 @@ Zennなどの技術メディアで話題のトピックを解説。
 - [Rust+Wasmで爆速ライフゲームを作って動く壁紙にする](tools/rust-wasm-lifegame-wallpaper.md)
 - [【Gemini】社内の風景写真を「新海誠風」に変換して、資料作成の素材不足を解決してみた](tools/b12ba64c57d413.md)
 - [Reactの魔法を理解する](tools/7c69f904c53ceb.md)
+- [【入門】Python 業務効率化 ライブラリとは？初心者向け徹底解説](tools/62175e094c9c7412abc709fb66e0e873.md)
+- [【入門】Gemini API 使い方 Pythonとは？初心者向け徹底解説](tools/7a585c7bb83254a6c015bf731b4c0834.md)
+- [【入門】VSCode おすすめ拡張機能 2025とは？初心者向け徹底解説](tools/4082cc7bd08f2a8ddf308a0a0d19867e.md)
+- [【入門】Docker 入門 初心者とは？初心者向け徹底解説](tools/191664acb19b1d7fa88b6d20a0b13ae0.md)
+- [【入門】MkDocs Material カスタマイズとは？初心者向け徹底解説](tools/44da11b6af2aba671afb0cb50c7333bd.md)
 
 ## 🤖 AIツールデータベース (AI Tool)
 
