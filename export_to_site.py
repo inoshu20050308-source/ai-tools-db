@@ -1,140 +1,29 @@
 import sqlite3
 import os
 import shutil
-import stat
-import time
-import logging
 import urllib.parse
-from collections import defaultdict
 
-# ==========================================
-# 設定 & パス定義
-# ==========================================
+# 設定
 DB_PATH = "seo_content.db"
-SITE_DIR = "my_site"
-DOCS_DIR = os.path.join(SITE_DIR, "docs")
-TOOLS_DIR = os.path.join(DOCS_DIR, "tools")
+DOCS_DIR = "docs"
+# 記事を格納するサブフォルダ（整理用）
+ARTICLES_DIR = os.path.join(DOCS_DIR, "articles")
 
-# ログ設定
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-logger = logging.getLogger(__name__)
+def get_db_connection():
+    return sqlite3.connect(DB_PATH)
 
-# ==========================================
-# ユーティリティ関数
-# ==========================================
-def on_rm_error(func, path, exc_info):
-    """
-    Windowsで削除に失敗した場合（読み取り専用など）、
-    属性を変更して再試行するためのエラーハンドラ
-    """
-    try:
-        os.chmod(path, stat.S_IWRITE)
-        func(path)
-    except Exception as e:
-        logger.warning(f"Could not remove {path}: {e}")
+def init_docs_structure():
+    """フォルダ構造の初期化"""
+    os.makedirs(ARTICLES_DIR, exist_ok=True)
 
-def safe_filename(url: str) -> str:
-    """URLから安全なファイル名を生成する"""
-    # 末尾のスラッシュを除去して最後のセグメントを取得
-    name = url.strip("/").split("/")[-1]
-    
-    # もし名前が取得できない、あるいは短すぎる場合はハッシュ値を使う
-    if not name or len(name) < 2:
-        name = f"article_{abs(hash(url))}"
-    
-    # 拡張子 .html などが含まれていたら除去して .md にする
-    if "." in name:
-        name = name.split(".")[0]
-        
-    return f"{name}.md"
+def create_search_buttons_md(title):
+    """記事末尾の検索ボタンMarkdownを作成"""
+    encoded_title = urllib.parse.quote(title)
+    amazon_url = f"https://www.amazon.co.jp/s?k={encoded_title}"
+    rakuten_url = f"https://search.rakuten.co.jp/search/mall/{encoded_title}"
+    yahoo_url = f"https://shopping.yahoo.co.jp/search?p={encoded_title}"
 
-def init_directories():
-    """記事格納用ディレクトリ(tools)の初期化"""
-    if os.path.exists(TOOLS_DIR):
-        logger.info(f"Cleaning up old directory: {TOOLS_DIR}")
-        try:
-            shutil.rmtree(TOOLS_DIR, onerror=on_rm_error)
-        except Exception as e:
-            logger.error(f"Failed to clean directory: {e}")
-            time.sleep(1)
-            try:
-                shutil.rmtree(TOOLS_DIR, ignore_errors=True)
-            except:
-                pass
-
-    os.makedirs(TOOLS_DIR, exist_ok=True)
-
-# ==========================================
-# メイン処理
-# ==========================================
-def export_articles():
-    """DBから記事を読み出し、カテゴリごとに整理して書き出す"""
-    init_directories()
-
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    cursor = conn.cursor()
-
-    # カテゴリごとの記事リストを保持する辞書
-    # キー: カテゴリ名, 値: 記事情報のリスト
-    categorized_articles = defaultdict(list)
-
-    try:
-        # 1. 記事データの取得 (categoryカラムも含める)
-        try:
-            query = "SELECT url, title, generated_body, category FROM products WHERE generated_body IS NOT NULL AND generated_body != ''"
-            cursor.execute(query)
-        except sqlite3.OperationalError:
-            # 万が一 category カラムがない場合へのフォールバック
-            logger.warning("'category' column missing. Fetching without category.")
-            query = "SELECT url, title, generated_body, 'Uncategorized' as category FROM products WHERE generated_body IS NOT NULL AND generated_body != ''"
-            cursor.execute(query)
-
-        rows = cursor.fetchall()
-
-        if not rows:
-            logger.warning("No articles found in database to export.")
-            return
-
-        logger.info(f"Found {len(rows)} articles. Exporting...")
-
-        # 2. 個別記事ファイル(.md)の生成
-        for row in rows:
-            url = row['url']
-            title = row['title']
-            body = row['generated_body']
-            # DBにカテゴリがない場合(None)は 'Uncategorized' とする
-            category = row['category'] if row['category'] else 'Uncategorized'
-
-            # ---------------------------------------------------------
-            # 追加処理1: 参照元リンクボタンを記事末尾に追加
-            # ---------------------------------------------------------
-            if url:
-                link_block = f"""
-
----
-
-<div class="grid cards" markdown>
--   [:material-link-variant: 元のページで詳細を見る]({url})
-</div>
-"""
-                body += link_block
-
-            # ---------------------------------------------------------
-            # 追加処理2: ECサイト検索ボタンの追加 (Amazon/楽天/Yahoo)
-            # ---------------------------------------------------------
-            if title:
-                # タイトルをURLエンコード
-                encoded_title = urllib.parse.quote(title)
-                
-                # 各サイトの検索URL生成
-                amazon_url = f"https://www.amazon.co.jp/s?k={encoded_title}"
-                rakuten_url = f"https://search.rakuten.co.jp/search/mall/{encoded_title}"
-                yahoo_url = f"https://shopping.yahoo.co.jp/search?p={encoded_title}"
-
-                # MkDocs Material用のカードグリッド
-                ec_block = f"""
-
+    return f"""
 ## 🛍️ この商品をさがす
 <div class="grid cards" markdown>
 -   [:material-cart: Amazonで探す]({amazon_url})
@@ -142,80 +31,80 @@ def export_articles():
 -   [:material-shopping: Yahoo!で探す]({yahoo_url})
 </div>
 """
-                body += ec_block
 
-            # ---------------------------------------------------------
-
-            filename = safe_filename(url)
-            filepath = os.path.join(TOOLS_DIR, filename)
-
-            # 記事書き出し
-            try:
-                with open(filepath, "w", encoding="utf-8") as f:
-                    f.write(body)
-                
-                # インデックス作成用にメタデータを保存
-                categorized_articles[category].append({
-                    "title": title,
-                    "path": f"tools/{filename}" # index.md から見た相対パス
-                })
-                
-                logger.info(f"Exported [{category}]: {filename}")
-            except Exception as e:
-                logger.error(f"Failed to write {filename}: {e}")
-
-        # 3. トップページ (index.md) の生成
-        create_index_page(categorized_articles)
-
-    except Exception as e:
-        logger.error(f"Database error: {e}")
-    finally:
-        conn.close()
-        logger.info("Export process completed.")
-
-def create_index_page(categorized_articles):
-    """カテゴリ分けされた記事リストから index.md を生成する"""
+def update_index_page(articles):
+    """トップページ(index.md)に新着記事リストを書き込む"""
     index_path = os.path.join(DOCS_DIR, "index.md")
     
-    logger.info("Generating index.md...")
+    # トップページの固定ヘッダー部分
+    header = """# AI Tools & Gadget DB
+ようこそ。ここはAIによって自動生成されたガジェット・ツール情報データベースです。
 
+## 🆕 新着記事一覧
+"""
+    
     with open(index_path, "w", encoding="utf-8") as f:
-        # サイトヘッダー
-        f.write("# AI Tech Review\n\n")
-        f.write("最新のAIツール、技術トレンド、ガジェット情報を網羅するデータベースです。\n\n")
+        f.write(header)
+        
+        # 新しい順にリンクを書き込む
+        # articles は (filename, title, category) のリスト想定
+        for filename, title, category in articles:
+            # リンク先は articles/filename
+            link = f"articles/{filename}"
+            f.write(f"- [{title}]({link}) <small>({category})</small>\n")
 
-        # セクション1: ガジェット (Gadget)
-        if "Gadget" in categorized_articles and categorized_articles["Gadget"]:
-            f.write("## 🏆 最新ガジェットランキング (Gadget)\n\n")
-            f.write("価格.comや楽天のランキングから厳選した注目ガジェット。\n\n")
-            for article in categorized_articles["Gadget"]:
-                f.write(f"- [{article['title']}]({article['path']})\n")
-            f.write("\n")
+def export_article_to_markdown():
+    """DBから記事を読み出し、MDファイル生成 ＆ index.md更新"""
+    init_docs_structure()
+    conn = get_db_connection()
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
 
-        # セクション2: 技術ニュース (Tech News)
-        if "Tech News" in categorized_articles and categorized_articles["Tech News"]:
-            f.write("## 📰 技術トレンドニュース (Tech News)\n\n")
-            f.write("Zennなどの技術メディアで話題のトピックを解説。\n\n")
-            for article in categorized_articles["Tech News"]:
-                f.write(f"- [{article['title']}]({article['path']})\n")
-            f.write("\n")
+    cursor.execute("SELECT * FROM products ORDER BY scraped_at DESC")
+    rows = cursor.fetchall()
 
-        # セクション3: AIツール (AI Tool)
-        if "AI Tool" in categorized_articles and categorized_articles["AI Tool"]:
-            f.write("## 🤖 AIツールデータベース (AI Tool)\n\n")
-            f.write("業務効率化に役立つ最新AIツールのレビュー。\n\n")
-            for article in categorized_articles["AI Tool"]:
-                f.write(f"- [{article['title']}]({article['path']})\n")
-            f.write("\n")
-            
-        # その他 (Uncategorized)
-        if "Uncategorized" in categorized_articles and categorized_articles["Uncategorized"]:
-            f.write("## 📁 その他\n\n")
-            for article in categorized_articles["Uncategorized"]:
-                f.write(f"- [{article['title']}]({article['path']})\n")
-            f.write("\n")
+    exported_articles = []
 
-    logger.info("index.md updated successfully.")
+    for row in rows:
+        title = row["title"]
+        body = row["generated_body"]
+        category = row["category"]
+        
+        # ファイル名をURLハッシュやIDから決定（なければタイトルから適当に）
+        # ここでは簡易的にurlのハッシュ値の一部を使うか、既存ロジックに合わせる
+        # DBにurlがある前提
+        url_hash = row["url"].split("/")[-1].replace(".html", "")
+        if not url_hash:
+             # 万が一ハッシュがない場合のバックアップ
+             import hashlib
+             url_hash = hashlib.md5(row["url"].encode()).hexdigest()
+             
+        filename = f"{url_hash}.md"
+        filepath = os.path.join(ARTICLES_DIR, filename)
+
+        # 本文がない場合はスキップ
+        if not body:
+            continue
+
+        # 検索ボタンを追加
+        search_buttons = create_search_buttons_md(title)
+        
+        full_content = f"# {title}\n\n{body}\n\n{search_buttons}"
+
+        with open(filepath, "w", encoding="utf-8") as f:
+            f.write(full_content)
+        
+        print(f"Exported: {filename}")
+        exported_articles.append((filename, title, category))
+
+    # 最後にトップページを更新
+    update_index_page(exported_articles)
+    print("✅ index.md has been updated with new articles.")
+
+    conn.close()
+
+def main():
+    export_article_to_markdown()
 
 if __name__ == "__main__":
-    export_articles()
+    main()
