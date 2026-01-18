@@ -27,6 +27,8 @@ Zennなどの技術メディアで話題のトピックを解説。
 - [【入門】VSCode おすすめ拡張機能 2025とは？初心者向け徹底解説](tools/4082cc7bd08f2a8ddf308a0a0d19867e.md)
 - [【入門】Docker 入門 初心者とは？初心者向け徹底解説](tools/191664acb19b1d7fa88b6d20a0b13ae0.md)
 - [【入門】MkDocs Material カスタマイズとは？初心者向け徹底解説](tools/44da11b6af2aba671afb0cb50c7333bd.md)
+- [【入門】ロジクール マウス 比較とは？初心者向け徹底解説](tools/3cc139f5a6330752200c72c8557cd9ed.md)
+- [【入門】昇降デスク メリットとは？初心者向け徹底解説](tools/43ee5bc6b0595e9d1acd7b336aa9eb24.md)
 
 ## 🤖 AIツールデータベース (AI Tool)
 

@@ -1,115 +1,85 @@
 import time
 import logging
 import subprocess
-import os
 import sys
+from typing import List
 
-# 自作モジュールのインポート
-# content_generator.py と export_to_site.py が同階層にある前提
-try:
-    from content_generator import ContentGenerator, DB_PATH
-    import export_to_site
-except ImportError as e:
-    print(f"Error importing modules: {e}")
-    sys.exit(1)
+# ★修正点1: クラスと設定値を明示的にインポート
+from content_generator import ContentGenerator, DB_PATH
 
 # ==========================================
-# 工場長の設定 (Configuration)
+# デフォルトのキーワードリスト
 # ==========================================
-
-# 今回生産する記事のキーワードリスト
-TARGET_KEYWORDS = [
-    "Python 業務効率化 ライブラリ",
-    "Gemini API 使い方 Python",
-    "VSCode おすすめ拡張機能 2025",
-    "Docker 入門 初心者",
-    "MkDocs Material カスタマイズ"
+DEFAULT_KEYWORDS = [
+    "Python 副業 稼ぎ方",
+    "Gemini API 活用事例",
 ]
 
 # ログ設定
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - [PIPELINE] - %(levelname)s - %(message)s',
-    handlers=[
-        logging.StreamHandler(),
-        logging.FileHandler("pipeline.log", mode='a', encoding='utf-8')
-    ]
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[logging.StreamHandler()]
 )
 logger = logging.getLogger(__name__)
 
-def run_git_commands():
-    """Gitコマンドを実行して変更をリモートにプッシュする"""
-    commands = [
-        ["git", "add", "."],
-        ["git", "commit", "-m", "Auto-update: Generated new articles via Pipeline"],
-        ["git", "push"]
-    ]
+def git_push_changes(count):
+    """生成された記事をGitHubにプッシュして公開する"""
+    try:
+        logger.info("🚀 Git送信を開始します...")
+        subprocess.run(["git", "add", "."], check=True)
+        commit_message = f"Auto-generated articles: {count} items"
+        subprocess.run(["git", "commit", "-m", commit_message], check=True)
+        subprocess.run(["git", "push"], check=True)
+        logger.info("✅ GitHubへの送信が完了しました！サイトが更新されます。")
+    except Exception as e:
+        logger.error(f"❌ Git操作エラー: {e}")
 
-    logger.info("Starting Git deployment...")
+def run_factory():
+    """記事量産工場のメインプロセス"""
     
-    for cmd in commands:
-        try:
-            result = subprocess.run(cmd, check=True, capture_output=True, text=True)
-            logger.info(f"Executed: {' '.join(cmd)}")
-            if result.stdout:
-                logger.debug(result.stdout)
-        except subprocess.CalledProcessError as e:
-            logger.error(f"Git Error on command {' '.join(cmd)}: {e.stderr}")
-            # commitは変更がない場合にエラーになることがあるが、パイプライン自体は止めない
-            if "nothing to commit" in e.stderr or "clean" in e.stderr:
-                logger.info("Nothing to commit. Continuing.")
-            else:
-                logger.warning("Git command failed, but proceeding.")
+    # コマンド引数のチェック
+    if len(sys.argv) > 1:
+        target_list = sys.argv[1:]
+        logger.info(f"🎯 コマンドライン引数を検出しました: {target_list}")
+    else:
+        target_list = DEFAULT_KEYWORDS
+        logger.info("📂 コマンド指定がないため、ファイル内のデフォルトリストを使用します。")
 
-def main():
-    logger.info("=== SEO Content Pipeline Started ===")
+    logger.info("🏭 記事量産工場を稼働させます...")
     
+    # ★修正点2: ここで「記事作成ロボ」を実体化（起動）させます
     generator = ContentGenerator(DB_PATH)
     
-    # -------------------------------------------------
-    # 1. 記事の連続生成 (Production Phase)
-    # -------------------------------------------------
-    logger.info(f"Target Keywords: {len(TARGET_KEYWORDS)} items")
+    total = len(target_list)
     
-    for i, keyword in enumerate(TARGET_KEYWORDS, 1):
-        logger.info(f"Processing [{i}/{len(TARGET_KEYWORDS)}]: {keyword}")
-        
+    for i, keyword in enumerate(target_list, 1):
+        logger.info(f"--- [{i}/{total}] キーワード: '{keyword}' の記事を作成中 ---")
         try:
-            # キーワード指定で記事生成を実行
+            # ★修正点3: 実体化したロボットに命令する
             generator.generate_article(target_keyword=keyword)
             
-            # APIレートリミット対策（10秒待機）
-            logger.info("Sleeping for 10s to respect API limits...")
-            time.sleep(10)
+            logger.info(f"✨ '{keyword}' の記事作成完了")
             
+            if i < total:
+                logger.info("☕ API休憩中 (10秒)...")
+                time.sleep(10)
         except Exception as e:
-            logger.error(f"Failed to generate article for '{keyword}': {e}")
+            logger.error(f"⚠️ '{keyword}' の作成に失敗しました: {e}")
             continue
 
-    logger.info("All articles generation phase completed.")
-
-    # -------------------------------------------------
-    # 2. サイトへの反映 (Export Phase)
-    # -------------------------------------------------
-    logger.info("Exporting content to MkDocs site...")
-    try:
-        # export_to_site.py のメイン関数を実行
-        export_to_site.export_articles()
-        logger.info("Export completed successfully.")
-    except Exception as e:
-        logger.critical(f"Export failed: {e}")
-        return # サイト生成に失敗したらデプロイはしない
-
-    # -------------------------------------------------
-    # 3. 公開 (Deployment Phase)
-    # -------------------------------------------------
-    # MkDocsのビルドコマンドが必要ならここで実行（GitHub Pagesならpushだけで良い場合も）
-    # subprocess.run(["mkdocs", "build"], check=True) 
+    logger.info("📝 全記事の生成が終了しました。サイトデータを更新します。")
     
-    # Git Push
-    run_git_commands()
+    # ★修正点4: エラー回避のため、コマンド経由でサイト生成を実行
+    try:
+        subprocess.run(["python", "export_to_site.py"], check=True)
+    except Exception as e:
+        logger.error(f"❌ サイト生成エラー: {e}")
+        return
 
-    logger.info("=== SEO Pipeline Finished Successfully ===")
+    # Gitへ送信
+    git_push_changes(total)
+    logger.info("🎉 全工程が完了しました。")
 
 if __name__ == "__main__":
-    main()
+    run_factory()
