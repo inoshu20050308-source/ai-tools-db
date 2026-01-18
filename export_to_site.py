@@ -80,8 +80,6 @@ def export_articles():
 
     try:
         # 1. 記事データの取得 (categoryカラムも含める)
-        # categoryカラムがない古いDBの場合のエラー回避のため、try-exceptでカラム確認しても良いが
-        # 前回のパイプライン修正でMigrationが入っている前提とする。
         try:
             query = "SELECT url, title, generated_body, category FROM products WHERE generated_body IS NOT NULL AND generated_body != ''"
             cursor.execute(query)
@@ -106,6 +104,23 @@ def export_articles():
             body = row['generated_body']
             # DBにカテゴリがない場合(None)は 'Uncategorized' とする
             category = row['category'] if row['category'] else 'Uncategorized'
+
+            # ---------------------------------------------------------
+            # 【追加処理】参照元リンクボタンを記事末尾に追加
+            # ---------------------------------------------------------
+            if url:
+                # MkDocs Material テーマ用カード型リンク
+                # generated_body の後に区切り線とボタンを追加
+                link_block = f"""
+
+---
+
+<div class="grid cards" markdown>
+-   [:material-link-variant: 元のページで詳細を見る]({url})
+</div>
+"""
+                body += link_block
+            # ---------------------------------------------------------
 
             filename = safe_filename(url)
             filepath = os.path.join(TOOLS_DIR, filename)

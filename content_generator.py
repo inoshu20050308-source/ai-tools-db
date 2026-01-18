@@ -9,7 +9,13 @@ from dotenv import load_dotenv
 import google.generativeai as genai
 from google.api_core import exceptions as google_exceptions
 from jinja2 import Template
-from affiliate_manager import get_affiliate_html  # 広告管理モジュール
+
+# 広告管理モジュールを読み込み
+try:
+    from affiliate_manager import get_affiliate_html
+except ImportError:
+    # モジュールがない場合のダミー
+    def get_affiliate_html(title): return ""
 
 # ==========================================
 # 0. Setup & Configuration
@@ -32,13 +38,20 @@ logger = logging.getLogger(__name__)
 @dataclass
 class GeneratorConfig:
     db_path: str = "seo_content.db"
-    model_name: str = "gemini-2.5-flash"
+    
+    # 【修正】ユーザー環境で利用可能な最新モデル 'gemini-2.0-flash' に変更
+    model_name: str = "gemini-2.0-flash"
+    
     api_key: str = os.getenv("GOOGLE_API_KEY")
-    # Gemini Free Tier (15 RPM) 対策
-    # 60秒 / 15回 = 4秒/回。安全マージンを含めて4.0秒待機する。
-    request_interval_seconds: float = 4.0
+    
+    # レート制限対策（設定維持）
+    # 通常リクエスト間隔: 15秒 (4 RPM)
+    request_interval_seconds: float = 15.0
+    
+    # エラー時のペナルティ待機時間: 30秒
+    error_cooldown_seconds: float = 30.0
 
-# Jinja2 プロンプトテンプレート (Ver 3.0: マルチジャンル対応版)
+# Jinja2 プロンプトテンプレート (維持)
 PROMPT_TEMPLATE = """
 あなたは「辛口だが信頼できるプロのテック編集長」です。
 提供された情報を元に、読者の購買意欲や知的好奇心を刺激する詳細なレビュー記事を作成してください。
@@ -107,7 +120,7 @@ class DatabaseHandler:
         return sqlite3.connect(self.db_path)
 
     def _migrate_db(self):
-        """DBマイグレーション: generated_body カラムが存在しない場合に追加"""
+        """DBマイグレーション"""
         conn = self._get_connection()
         cursor = conn.cursor()
         try:
@@ -126,16 +139,20 @@ class DatabaseHandler:
             conn.close()
 
     def fetch_pending_products(self, limit: int = 10) -> List[Dict[str, Any]]:
-        """記事未生成のレコードを取得"""
+        """
+        記事未生成のレコードを取得する。
+        Gadgetカテゴリを最優先し、次に新しい順で取得する。
+        """
         conn = self._get_connection()
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
         try:
-            # generated_body が NULL または 空文字 のものを対象とする
+            # ORDER BY: category='Gadget' がTrue(1)のものを先頭にする
             query = """
-            SELECT url, title, description, price, specs 
+            SELECT url, title, description, price, specs, category, scraped_at 
             FROM products 
             WHERE generated_body IS NULL OR generated_body = ''
+            ORDER BY (category = 'Gadget') DESC, scraped_at DESC
             LIMIT ?
             """
             cursor.execute(query, (limit,))
@@ -190,18 +207,18 @@ class GeminiGenerator:
     def generate_article(self, product_data: Dict[str, Any]) -> Optional[str]:
         """
         Gemini APIを使用して記事を生成する。
-        レートリミット(15 RPM)を考慮し、実行後に必ず待機時間を設ける。
+        堅牢なレート制限対策（バックオフ）を含む。
         """
         prompt = self._build_prompt(product_data)
         url = product_data.get('url')
+        title = product_data.get('title')
 
         try:
-            logger.info(f"Requesting Gemini for: {product_data.get('title')}...")
+            logger.info(f"Requesting Gemini ({self.config.model_name}) for: {title} ...")
             
             # コンテンツ生成
             response = self.model.generate_content(prompt)
             
-            # 安全のためテキスト取得前に検証
             if response.text:
                 return response.text
             else:
@@ -209,16 +226,31 @@ class GeminiGenerator:
                 return None
 
         except google_exceptions.ResourceExhausted:
-            logger.error(f"Rate limit exceeded (429) for {url}. Please increase sleep interval.")
+            # 429エラー時は長時間待機する
+            cooldown = self.config.error_cooldown_seconds
+            logger.error(f"!!! Rate limit exceeded (429) for {title}. !!!")
+            logger.error(f"Entering COOL-DOWN mode for {cooldown} seconds...")
+            
+            # ペナルティ待機
+            time.sleep(cooldown)
+            
+            # 今回はリトライせずスキップ（次回の実行に任せる）
             return None
+        
+        except google_exceptions.NotFound as e:
+            # モデルが見つからないなどの404エラー
+            logger.error(f"Model not found error: {e}")
+            logger.error(f"Current model '{self.config.model_name}' might be invalid.")
+            return None
+
         except Exception as e:
             logger.error(f"Generation error for {url}: {e}")
             return None
+            
         finally:
-            # 重要: Gemini Free Tier対策 (15 RPM = 4秒/req)
-            # 成功・失敗に関わらず、APIを叩いたら必ず待機する
+            # 成功・失敗に関わらず、次のリクエストまで十分に間隔を空ける
             wait_time = self.config.request_interval_seconds
-            logger.info(f"Sleeping for {wait_time}s to respect rate limit...")
+            logger.info(f"Sleeping for {wait_time}s to respect rate limit (Safe Interval)...")
             time.sleep(wait_time)
 
 # ==========================================
@@ -232,8 +264,10 @@ def main():
     db = DatabaseHandler(config.db_path)
     generator = GeminiGenerator(config)
 
-    # 1. 未処理データの取得 (テスト用に最大5件)
-    pending_products = db.fetch_pending_products(limit=5)
+    # 1. 未処理データの取得
+    target_limit = 50
+    logger.info(f"Fetching pending records (Limit: {target_limit}, Priority: Gadget)...")
+    pending_products = db.fetch_pending_products(limit=target_limit)
 
     if not pending_products:
         logger.info("No pending products found.")
@@ -241,26 +275,23 @@ def main():
 
     logger.info(f"Found {len(pending_products)} products to process.")
 
-    # 2. 順次処理 (Rate Limitを守るため、あえて非同期にせずループで処理)
+    # 2. 順次処理
     for i, product in enumerate(pending_products, 1):
-        logger.info(f"--- Processing {i}/{len(pending_products)}: {product.get('url')} ---")
+        category = product.get('category', 'Unknown')
+        logger.info(f"--- Processing {i}/{len(pending_products)} [{category}]: {product.get('url')} ---")
         
-        # 記事生成 (同期処理)
+        # 記事生成
         generated_text = generator.generate_article(product)
         
         if generated_text:
-            # --- 収益化ロジックの注入 ---
-            # 製品タイトルに基づいて最適な広告HTMLを取得
+            # 収益化ロジック
             ad_html = get_affiliate_html(product['title'])
-            
-            # 記事本文の末尾に広告を結合
             final_content = generated_text + "\n\n" + ad_html
-            # --------------------------
 
             # DB保存
             db.update_article(product['url'], final_content)
         else:
-            logger.warning("Skipped DB update due to generation failure.")
+            logger.warning("Skipped DB update due to generation failure (or rate limit skip).")
 
     logger.info("Pipeline completed successfully.")
 

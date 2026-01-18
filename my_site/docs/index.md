@@ -20,6 +20,8 @@ Zennなどの技術メディアで話題のトピックを解説。
 - [Rust アプリケーションにおける実践的トランザクション設計](tools/68e3d158a6d4b9.md)
 - [UseCaseレイヤーって要るの？](tools/354615e675ae9a.md)
 - [Rust+Wasmで爆速ライフゲームを作って動く壁紙にする](tools/rust-wasm-lifegame-wallpaper.md)
+- [【Gemini】社内の風景写真を「新海誠風」に変換して、資料作成の素材不足を解決してみた](tools/b12ba64c57d413.md)
+- [Reactの魔法を理解する](tools/7c69f904c53ceb.md)
 
 ## 🤖 AIツールデータベース (AI Tool)
 

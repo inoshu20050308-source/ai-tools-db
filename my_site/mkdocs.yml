@@ -3,11 +3,15 @@
 # ==========================================
 site_name: AI Tech Review
 site_description: エンジニアのための辛口AIガジェット・ツール比較メディア
-site_url: https://inoshu20050308-source.github.io/ai-tools-db/  # 実際の公開URLに書き換えてください
-site_author: Your Name
-
+# ↓ あなたのGitHub名に合わせて修正しました
+site_url: https://techino35.github.io/ai-tools-db/
+site_author: Shuto Inoue
+# mkdocs.yml の extra の部分をこう書く
+extra:
+  # ↓ ここに、さっきコピーした「長い英数字」を貼り付ける
+  google_site_verification: y8_MiR4b9lPVEmTlz3nFw5V_1O8f_8YJrHiVwi2uQ4Q
 # 著作権表示 (2026年版)
-copyright: Copyright (c) 2026 Your Name All rights reserved.
+copyright: Copyright (c) 2026 Shuto Inoue All rights reserved.
 
 # テーマ設定: プロフェッショナルなテックメディア仕様
 theme:
@@ -70,6 +74,6 @@ markdown_extensions:
       emoji_index: !!python/name:materialx.emoji.twemoji
       emoji_generator: !!python/name:materialx.emoji.to_svg
 
-# CSSカスタマイズ (必要に応じて)
-extra_css:
-  - stylesheets/extra.css
+# CSSカスタマイズ (もしファイルを作っていないなら、今はコメントアウトしておくのが無難です)
+# extra_css:
+#   - stylesheets/extra.css
