@@ -1,79 +1,44 @@
-# ==========================================
-# 基本情報 (Basic Information)
-# ==========================================
-site_name: AI Tech Review
-site_description: エンジニアのための辛口AIガジェット・ツール比較メディア
-# ↓ あなたのGitHub名に合わせて修正しました
-site_url: https://techino35.github.io/ai-tools-db/
-site_author: Shuto Inoue
-# mkdocs.yml の extra の部分をこう書く
-extra:
-  # ↓ ここに、さっきコピーした「長い英数字」を貼り付ける
-  google_site_verification: y8_MiR4b9lPVEmTlz3nFw5V_1O8f_8YJrHiVwi2uQ4Q
-# 著作権表示 (2026年版)
-copyright: Copyright (c) 2026 Shuto Inoue All rights reserved.
+site_name: AI Tools & Gadget DB
+site_url: https://techino35.github.io/ai-tools-db
+site_description: AIとPythonで自動生成されたガジェット・ツール情報データベース
 
-# テーマ設定: プロフェッショナルなテックメディア仕様
 theme:
   name: material
   language: ja
-  
-  # カラーパレット (ライト/ダークモード切替対応)
-  palette:
-    # ライトモード
-    - media: "(prefers-color-scheme: light)"
-      scheme: default
-      primary: indigo
-      accent: blue
-      toggle:
-        icon: material/weather-sunny
-        name: ダークモードに切り替え
-    # ダークモード
-    - media: "(prefers-color-scheme: dark)"
-      scheme: slate
-      primary: indigo
-      accent: blue
-      toggle:
-        icon: material/weather-night
-        name: ライトモードに切り替え
-
-  # フォント設定 (Google Fontsから自動読み込み)
-  font:
-    text: Noto Sans JP
-    code: Roboto Mono
-
-  # 機能フラグ (UX向上)
   features:
-    - navigation.instant      # ページ遷移を高速化 (SPA風)
-    - navigation.tracking     # スクロール追従
-    - navigation.top          # トップへ戻るボタン
-    - navigation.tabs         # PC表示時にタブナビゲーション化 (高級感UP)
-    - search.suggest          # 検索サジェスト
-    - search.highlight        # 検索結果のハイライト
-    - content.code.copy       # コードブロックのコピーボタン
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - search.suggest
+    - search.highlight
+  palette:
+    - scheme: default
+      primary: teal
+      accent: purple
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: teal
+      accent: lime
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
 
-# Markdown拡張機能 (リッチな表現用)
+# ▼ ここが重要：nav（メニュー指定）を削除しました。
+# navセクションがない場合、MkDocsはフォルダ内の全ファイルを自動でメニューに並べます。
+
+plugins:
+  - search
+
 markdown_extensions:
-  # 標準機能
-  - toc:
-      permalink: true
-  - tables
-  - attr_list
-  
-  # Admonition (注釈ボックス: 記事の要)
   - admonition
-  
-  # PyMdown Extensions (Materialテーマ推奨セット)
-  - pymdownx.details      # 折りたたみ詳細
-  - pymdownx.superfences  # 高度なコードブロック・ネスト
-  - pymdownx.inlinehilite
-  - pymdownx.snippets
-  
-  # アイコン・絵文字対応
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
   - pymdownx.emoji:
       emoji_index: !!python/name:materialx.emoji.twemoji
       emoji_generator: !!python/name:materialx.emoji.to_svg
-
-# CSSカスタマイズ (もしファイルを作っていないなら、今はコメントアウトしておくのが無難です)
-# extra_css:
-#   - stylesheets/extra.css
+  - attr_list
+  - md_in_html
