@@ -29,6 +29,8 @@ Zennなどの技術メディアで話題のトピックを解説。
 - [【入門】MkDocs Material カスタマイズとは？初心者向け徹底解説](tools/44da11b6af2aba671afb0cb50c7333bd.md)
 - [【入門】ロジクール マウス 比較とは？初心者向け徹底解説](tools/3cc139f5a6330752200c72c8557cd9ed.md)
 - [【入門】昇降デスク メリットとは？初心者向け徹底解説](tools/43ee5bc6b0595e9d1acd7b336aa9eb24.md)
+- [【入門】Gemini ChatGPT 比較とは？初心者向け徹底解説](tools/2ff9f5b34bc3c7d6bacc722103896946.md)
+- [【入門】Claude 3 使い方とは？初心者向け徹底解説](tools/c2c680c58b19334299d29634ad3487d5.md)
 
 ## 🤖 AIツールデータベース (AI Tool)
 
